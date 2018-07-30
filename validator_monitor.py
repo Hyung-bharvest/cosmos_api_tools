@@ -1,5 +1,8 @@
 # -*- coding: utf8 -*-
 
+# monitor validator's commit activity & alert by telegram message
+# by dlguddus(B-Harvest)
+
 import time
 import requests
 import json
