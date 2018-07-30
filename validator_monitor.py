@@ -15,15 +15,17 @@ from flask import Markup
 from flask import Flask
 from flask import render_template
 
-validator_address = "" # put your validator hex address here
-telegram_token = "" # put your telegram bot token here
-telegram_chat_id = "" # put your telegram chat_id here
+# validator_address = "" # put your validator hex address here
+# telegram_token = "" # put your telegram bot token here
+# telegram_chat_id = "" # put your telegram chat_id here
+# node_IP_port = [] # put your node's IP:port(26657) for getting node info
+
 height_before = -1
 height = 0
 validator_height = 0
 validator_timestamp = ""
 count = 0
-
+n_peers = []
 
 app = Flask(__name__)
 @app.route("/")
@@ -36,9 +38,10 @@ def flask_view():
         commit_status = "Missing!"
 
     reternscript = '<meta http-equiv="refresh" content="5">'
-    reternscript = reternscript + 'validator address : ' + str(validator_address) + '</br>'
     reternscript = reternscript + 'height : ' + str(height) + '</br>validator height : ' + str(validator_height) + '</br>'
-    reternscript = reternscript + 'commit status : ' + str(commit_status)
+    reternscript = reternscript + 'commit status : ' + str(commit_status) + '</br>'
+    for i in range(0,len(n_peers)):
+         reternscript = reternscript + 'n_peers(' + str(i) +') : ' + str(n_peers[i]) + '</br>'
     return reternscript
 
 def get_data():
@@ -52,6 +55,7 @@ def get_data():
     global validator_height
     global validator_timestamp
     global count
+    global n_peers
 
     while True:
         # get consensus state from seednode
@@ -87,26 +91,29 @@ def get_data():
                     requestURL = requestURL + str(datetime.datetime.now()) + ':MissingCommits!!!'
                     response = requests.get(requestURL, timeout=10)
                 else :
-                    if count > 720:
-                        requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
-                        requestURL = requestURL + str(datetime.datetime.now()) + ':Height=' + str(height) +'/Status:OK'
-                        response = requests.get(requestURL, timeout=10)
-                        count = 0
+                    pass
                 height_before = height
+
+                # get n_peers for each nodes
+                n_peers = []
+                for i in range(0,len(node_IP_port)):
+                    response = requests.get("http://" + str(node_IP_port[i]) + "/net_info", timeout=10)
+                    n_peers.append(int(json.loads(response.text)["result"]["n_peers"]))
+
+                # send message in every 1 hour
+                if count > 720:
+                    requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
+                    requestURL = requestURL + str(datetime.datetime.now()) + ':Height=' + str(height) +'/Status:OK/Peers:'
+                    for i in range(0,len(n_peers)):
+                        requestURL = requestURL + str(n_peers[i]) + '.'
+                    response = requests.get(requestURL, timeout=10)
+                    count = 0
+
                 count = count + 1
+
         else :
             requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
             requestURL = requestURL + str(datetime.datetime.now()) + ':RequestError!!!'
             response = requests.get(requestURL, timeout=10)
 
         time.sleep(1)
-
-
-def flask_run():
-    app.run(host='0.0.0.0', port='5000')
-
-t1 = threading.Thread(name='flask_run', target=flask_run)
-t2 = threading.Thread(name='get_data', target=get_data)
-
-t1.start()
-t2.start()
