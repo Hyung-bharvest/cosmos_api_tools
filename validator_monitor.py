@@ -15,10 +15,10 @@ from flask import Markup
 from flask import Flask
 from flask import render_template
 
-# validator_address = "" # put your validator hex address here
-# telegram_token = "" # put your telegram bot token here
-# telegram_chat_id = "" # put your telegram chat_id here
-# node_IP_port = [] # put your node's IP:port(26657) for getting node info
+validator_address = "" # put your validator hex address here
+telegram_token = "" # put your telegram bot token here
+telegram_chat_id = "" # put your telegram chat_id here
+node_IP_port = [] # put your node's IP:port(26657) for getting node info
 
 height_before = -1
 height = 0
