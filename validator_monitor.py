@@ -64,24 +64,24 @@ def get_data():
             round = int(height_round_step_split[1])
             step = int(height_round_step_split[2])
 
-            # get validator's commit
-            Response_CommitHeight = requests.get("https://gaia-seeds.interblock.io/commit?height=" + str(height-2), timeout=10)
-            validator_data = ""
-            if str(Response_CommitHeight) == "<Response [200]>" :
-                JSON_CommitHeight = json.loads(Response_CommitHeight.text)
-                for item in JSON_CommitHeight["result"]["SignedHeader"]["commit"]["precommits"] :
-                    if str(item) == "null" or item == None : pass
-                    else :
-                        if item["validator_address"] == validator_address :
-                            validator_data = item
-                            validator_height = int(validator_data["height"])
-                            validator_timestamp = str(validator_data["timestamp"])
-                            break
-            else :
-                pass
-
-            # send telegram message when missing commits
             if height_before < height:
+                # get validator's commit
+                Response_CommitHeight = requests.get("https://gaia-seeds.interblock.io/commit?height=" + str(height-2), timeout=10)
+                validator_data = ""
+                if str(Response_CommitHeight) == "<Response [200]>" :
+                    JSON_CommitHeight = json.loads(Response_CommitHeight.text)
+                    for item in JSON_CommitHeight["result"]["SignedHeader"]["commit"]["precommits"] :
+                        if str(item) == "null" or item == None : pass
+                        else :
+                            if item["validator_address"] == validator_address :
+                                validator_data = item
+                                validator_height = int(validator_data["height"])
+                                validator_timestamp = str(validator_data["timestamp"])
+                                break
+                else :
+                    pass
+
+                # send telegram message when missing commits
                 if validator_data == "" :
                     requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
                     requestURL = requestURL + str(datetime.datetime.now()) + ':MissingCommits!!!'
@@ -99,11 +99,11 @@ def get_data():
             requestURL = requestURL + str(datetime.datetime.now()) + ':RequestError!!!'
             response = requests.get(requestURL, timeout=10)
 
+        time.sleep(1)
+
 
 def flask_run():
     app.run(host='0.0.0.0', port='5000')
-
-
 
 t1 = threading.Thread(name='flask_run', target=flask_run)
 t2 = threading.Thread(name='get_data', target=get_data)
