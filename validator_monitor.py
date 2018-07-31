@@ -19,6 +19,7 @@ validator_address = "" # put your validator hex address here
 telegram_token = "" # put your telegram bot token here
 telegram_chat_id = "" # put your telegram chat_id here
 node_IP_port = [] # put your node's IP:port(26657) for getting node info
+commit_history_period = [1, 10, 50, 100, 500, 1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000] # put array of number of blocks for showing recent n-block commiting status
 
 height_before = -1
 height = 0
@@ -26,6 +27,11 @@ validator_height = 0
 validator_timestamp = ""
 count = 0
 n_peers = []
+len_commitHistory = 0
+sumCommitArray = []
+datetimeArray = []
+blockheightArray = []
+
 
 app = Flask(__name__)
 @app.route("/")
@@ -39,9 +45,24 @@ def flask_view():
 
     reternscript = '<meta http-equiv="refresh" content="5">'
     reternscript = reternscript + 'height : ' + str(height) + '</br>validator height : ' + str(validator_height) + '</br>'
-    reternscript = reternscript + 'commit status : ' + str(commit_status) + '</br>'
+    reternscript = reternscript + 'commit status : ' + str(commit_status) + '</br></br>'
     for i in range(0,len(n_peers)):
-         reternscript = reternscript + 'n_peers(' + str(i) +') : ' + str(n_peers[i]) + '</br>'
+        reternscript = reternscript + 'n_peers(' + str(i) +') : ' + str(n_peers[i]) + '</br>'
+
+    if len(sumCommitArray)>0:
+        num = 0
+        reternscript = reternscript + '</br>missing commits / total commits (missing rate) : </br>'
+        for blockPeriod in commit_history_period:
+            if blockPeriod < len_commitHistory:
+                reternscript = reternscript + str(blockPeriod-sumCommitArray[num]) + '/' + str(blockPeriod) + '(' + str(int((1-sumCommitArray[num]/blockPeriod)*1000.0)/10.0) + '%) '
+            num = num + 1
+
+    reternscript = reternscript + '</br></br>recent missings</br>'
+
+    if len(datetimeArray)>0:
+        for i in range(0,len(datetimeArray)):
+            reternscript = reternscript + str(datetimeArray[i]) + ' --> block ' + str(blockheightArray[i]) + '</br>'
+
     return reternscript
 
 def append_to_json(_dict,path):
@@ -68,10 +89,44 @@ def get_data():
     global validator_timestamp
     global count
     global n_peers
+    global sumCommitArray
+    global len_commitHistory
+    global datetimeArray
+    global blockheightArray
+
 
     while True:
 
         utc_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+        with open("commitHistory.txt") as f:
+            commitHistory = json.load(f)
+
+        len_commitHistory = len(commitHistory)
+        sumCommitArray = []
+        datetimeArray = []
+        blockheightArray = []
+        cnt = 0
+
+        # get recent missing commits
+        for i in range(0, len_commitHistory):
+            if cnt > 19 :
+                break
+            else :
+                if commitHistory[len_commitHistory-i-1]['commit'] == "0" :
+                    datetimeArray.append(commitHistory[len_commitHistory-i-1]['datetime'])
+                    blockheightArray.append(commitHistory[len_commitHistory-i-1]['commit_height'])
+                    cnt = cnt + 1
+
+        # get period missing data
+        for blockPeriod in commit_history_period:
+            if blockPeriod < len_commitHistory:
+                sumCommit = 0
+                for i in range(0,blockPeriod):
+                    sumCommit = sumCommit + int(commitHistory[len_commitHistory-i-1]['commit'])
+                sumCommitArray.append(sumCommit)
+            else:
+                sumCommitArray.append(0)
 
         try:
 
@@ -138,13 +193,13 @@ def get_data():
                 requestURL = requestURL + str(utc_datetime) + ':RequestError!!!'
                 response = requests.get(requestURL, timeout=10)
 
-            time.sleep(1)
+            #time.sleep(1)
 
         except:
             requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
             requestURL = requestURL + str(utc_datetime) + ':RequestError!!!'
             response = requests.get(requestURL, timeout=10)
-            time.sleep(1)
+            #time.sleep(1)
 
 
 def flask_run():
