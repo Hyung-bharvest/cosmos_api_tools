@@ -44,6 +44,18 @@ def flask_view():
          reternscript = reternscript + 'n_peers(' + str(i) +') : ' + str(n_peers[i]) + '</br>'
     return reternscript
 
+def append_to_json(_dict,path):
+    with open(path, 'ab+') as f:
+        f.seek(0,2)                                #Go to the end of file
+        if f.tell() == 0 :                         #Check if file is empty
+            f.write(json.dumps([_dict]).encode())  #If empty, write an array
+        else :
+            f.seek(-1,2)
+            f.truncate()                           #Remove the last character, open the array
+            f.write(' ,\n'.encode())                #Write the separator
+            f.write(json.dumps(_dict).encode())    #Dump the dictionary
+            f.write(']'.encode())
+
 def get_data():
 
     global height
@@ -58,6 +70,8 @@ def get_data():
     global n_peers
 
     while True:
+
+        utc_datetime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
         try:
 
@@ -86,15 +100,16 @@ def get_data():
                                     validator_timestamp = str(validator_data["timestamp"])
                                     break
                     else :
-                        pass
+                        break
 
                     # send telegram message when missing commits
                     if validator_data == "" :
+                        commitFlag = 0
                         requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
-                        requestURL = requestURL + str(datetime.datetime.now()) + ':MissingCommits!!!'
+                        requestURL = requestURL + str(utc_datetime) + ':MissingCommits!!!'
                         response = requests.get(requestURL, timeout=10)
                     else :
-                        pass
+                        commitFlag = 1
                     height_before = height
 
                     # get n_peers for each nodes
@@ -106,7 +121,7 @@ def get_data():
                     # send message in every 1 hour
                     if count > 720:
                         requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
-                        requestURL = requestURL + str(datetime.datetime.now()) + ':Height=' + str(height) +'/Status:OK/Peers:'
+                        requestURL = requestURL + str(utc_datetime) + ':Height=' + str(height) +'/Status:OK/Peers:'
                         for i in range(0,len(n_peers)):
                             requestURL = requestURL + str(n_peers[i]) + '.'
                         response = requests.get(requestURL, timeout=10)
@@ -114,18 +129,22 @@ def get_data():
 
                     count = count + 1
 
+                    # logging data to file
+                    logJSON = {'datetime':str(utc_datetime), 'block_height':str(height), 'commit_height':str(validator_height), 'commit':str(commitFlag)}
+                    append_to_json(logJSON, "commitHistory.txt")
+
             else :
                 requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
-                requestURL = requestURL + str(datetime.datetime.now()) + ':RequestError!!!'
+                requestURL = requestURL + str(utc_datetime) + ':RequestError!!!'
                 response = requests.get(requestURL, timeout=10)
 
             time.sleep(1)
 
         except:
             requestURL = "https://api.telegram.org/bot" + str(telegram_token) + "/sendMessage?chat_id=" + telegram_chat_id + "&text="
-            requestURL = requestURL + str(datetime.datetime.now()) + ':RequestError!!!'
+            requestURL = requestURL + str(utc_datetime) + ':RequestError!!!'
             response = requests.get(requestURL, timeout=10)
-            time.sleep(10)
+            time.sleep(1)
 
 
 def flask_run():
