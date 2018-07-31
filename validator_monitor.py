@@ -43,7 +43,7 @@ def flask_view():
     else:
         commit_status = "Missing!"
 
-    reternscript = '<meta http-equiv="refresh" content="5">'
+    reternscript = '<meta http-equiv="refresh" content="5"><font size=1 >'
     reternscript = reternscript + 'height : ' + str(height) + '</br>validator height : ' + str(validator_height) + '</br>'
     reternscript = reternscript + 'commit status : ' + str(commit_status) + '</br></br>'
     for i in range(0,len(n_peers)):
@@ -62,6 +62,8 @@ def flask_view():
     if len(datetimeArray)>0:
         for i in range(0,len(datetimeArray)):
             reternscript = reternscript + str(datetimeArray[i]) + ' --> block ' + str(blockheightArray[i]) + '</br>'
+
+    reternscript = reternscript + '</font>'
 
     return reternscript
 
