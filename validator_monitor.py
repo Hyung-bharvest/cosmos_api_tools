@@ -20,7 +20,7 @@ telegram_token = "" # put your telegram bot token here
 telegram_chat_id = "" # put your telegram chat_id here
 node_IP_port = [] # put your node's IP:port(26657) for getting node info
 commit_history_period = [1, 10, 50, 100, 500, 1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000] # put array of number of blocks for showing recent n-block commiting status
-httpAddress = "http://172.31.16.248:26657" # address to request gaia information
+httpAddress = "" # address to request gaia information
 
 height_before = -1
 height = 0
