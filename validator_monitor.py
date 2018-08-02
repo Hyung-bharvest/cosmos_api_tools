@@ -15,12 +15,12 @@ from flask import Markup
 from flask import Flask
 from flask import render_template
 
-validator_address = "" # put your validator hex address here
+validator_address = "" # put your validator node_id here
 telegram_token = "" # put your telegram bot token here
 telegram_chat_id = "" # put your telegram chat_id here
 node_IP_port = [] # put your node's IP:port(26657) for getting node info
 commit_history_period = [1, 10, 50, 100, 500, 1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000] # put array of number of blocks for showing recent n-block commiting status
-httpAddress = "" # address to request gaia information
+httpAddress = "" # http://ip:port to request gaia information
 
 height_before = -1
 height = 0
@@ -39,8 +39,11 @@ def flask_view():
     else:
         commit_status = "Missing!"
 
-    with open("commitHistory.txt") as f:
-        commitHistory = json.load(f)
+    try:
+        with open("commitHistory.txt") as f:
+            commitHistory = json.load(f)
+    except:
+        commitHistory = []
 
     len_commitHistory = len(commitHistory)
     sumCommitArray = []
